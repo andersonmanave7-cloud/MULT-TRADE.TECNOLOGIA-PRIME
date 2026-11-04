@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mult Trade · Tecnologia Prime</title>
+<style>
+:root{--bg:#0b0b0d;--sf:#17171b;--sf2:#212127;--tx:#f2f2f4;--mu:#9a9aa5;--ac:#c9ccd4;--ln:#2a2a31;--ok:#6fd08c;--warn:#e5b567;--bad:#e5484d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:calc(88px + env(safe-area-inset-bottom))}
+main{max-width:720px;margin:auto;padding:14px 16px}
+header.top{position:sticky;top:0;z-index:5;background:var(--bg);text-align:center;padding:14px 0 10px;border-bottom:1px solid var(--ln)}
+.brand{font-weight:800;letter-spacing:.32em;font-size:20px;text-indent:.32em}
+.sub{font-size:11px;letter-spacing:.28em;color:var(--ac);text-transform:uppercase}
+.dock{position:fixed;left:0;right:0;bottom:0;max-width:720px;margin:auto;display:flex;justify-content:space-around;background:var(--sf);border-top:1px solid var(--ln);padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:6}
+.dock button{background:none;border:0;color:var(--mu);font:inherit;font-size:11px;padding:4px 8px;position:relative;cursor:pointer}
+.dock button i{display:block;font-style:normal;font-size:20px}
+.dock button.on{color:var(--tx)}
+.badge{position:absolute;top:0;right:0;background:var(--bad);color:#fff;border-radius:9px;font-size:10px;padding:0 5px}
+.hero{background:linear-gradient(135deg,#2b2c33,#0f0f12);border:1px solid var(--ln);border-radius:18px;padding:22px 18px}
+.hero h1{font-size:22px;line-height:1.2;margin:0 0 8px}
+.muted,small{color:var(--mu)}
+small{font-size:12px}
+h2{font-size:17px;margin:22px 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:14px;min-height:72px;text-align:left;color:var(--tx);font:inherit;font-weight:700;cursor:pointer}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.ph{height:120px;background:var(--sf2);display:grid;place-items:center;font-size:40px}
+.ph img{width:100%;height:100%;object-fit:cover}
+.ct{padding:10px;display:flex;flex-direction:column;gap:4px}
+.ct b{font-size:14px;min-height:38px}
+.pr{font-weight:800}
+.av{font-size:11px;border-radius:8px;padding:2px 8px;align-self:flex-start;background:var(--sf2)}
+.av.mz{color:var(--ok)}.av.sa{color:var(--warn)}.av.x{color:var(--bad)}
+.btn{background:var(--ac);color:#0b0b0d;border:0;border-radius:12px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer;width:100%}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.chip{background:var(--sf);border:1px solid var(--ln);color:var(--tx);border-radius:20px;padding:7px 12px;font:inherit;font-size:13px;cursor:pointer}
+.crumbs{font-size:13px;color:var(--mu);margin:4px 0 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.crumbs b{color:var(--tx)}
+.row{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+input,select{width:100%;background:var(--sf);color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:11px;font:inherit;margin:4px 0 10px}
+label{font-size:12px;color:var(--mu)}
+.opt{display:block;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer}
+.opt input{width:auto;margin:0 8px 0 0}
+.note{font-size:12px;color:var(--mu);margin:8px 0}
+.msg{border-radius:12px;padding:12px;margin:10px 0;background:var(--sf2)}
+.lv{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:12px;margin-bottom:8px}
+.bar{height:6px;background:var(--sf2);border-radius:3px;margin:10px 0}
+.bar div{height:100%;background:var(--ok);border-radius:3px}
+.tot{font-size:18px;font-weight:800;margin:12px 0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+.wabar{display:block;background:#25d366;color:#fff;text-align:center;font-size:13px;padding:7px;text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand">MULT TRADE</div><div class="sub">Tecnologia Prime</div></header>
+<div id="wabar"></div>
+<main id="app"></main>
+<nav class="dock" id="dock"></nav>
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL = 'https://achjmbapqobhmydhjmol.supabase.co';
+const SB_KEY = 'sb_publishable_KNDw25dRAzwUuT6YD-bKPQ_qbTyOEV4';
+const H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
+
+const ST = {received:'Pedido recebido',awaiting_confirmation:'Aguardando confirmação',payment_pending:'Pagamento pendente',payment_confirmed:'Pagamento confirmado',reserved_za:'Reservado na África do Sul',purchased:'Produto adquirido',in_transit:'Em transporte para Moçambique',received_mz:'Recebido em Moçambique',preparing_delivery:'Em preparação para entrega',out_for_delivery:'Saiu para entrega',delivered:'Entregue',cancelled:'Cancelado'};
+const ORDER = ['received','awaiting_confirmation','payment_pending','payment_confirmed','reserved_za','purchased','in_transit','received_mz','preparing_delivery','out_for_delivery','delivered'];
+const ERRS = {product_unavailable:'Um dos produtos já não está disponível. Atualize o carrinho.',invalid_customer:'Confirme o nome e o contacto.',invalid_items:'O carrinho está vazio ou é inválido.',invalid_quantity:'Quantidade inválida (de 1 a 100).',invalid_quote_mode:'Escolha de cotação inválida.'};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => Math.round(Number(n) || 0).toLocaleString('pt-PT') + ' MT';
+const fv = (f, n) => (f.elements.namedItem(n) || {}).value || '';
+function load(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
+function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+const S = { step:1, view:'home', dept:null, sub:null, q:'', data:null, error:'', cart: load('mt_cart', []), form:{}, track:'', last: load('mt_last', null), busy:false, quote:'automatica', pid:null, pick:{}, pq:1, feedN:8, feed:null, io:null };
+
+async function api(path){
+  const r = await fetch(SB_URL + '/rest/v1/' + path, { headers: H });
+  if(!r.ok) throw new Error('api ' + r.status);
+  return r.json();
+}
+async function rpc(name, body){
+  const r = await fetch(SB_URL + '/rest/v1/rpc/' + name, { method:'POST', headers:{...H, 'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => null);
+  if(!r.ok) throw new Error((j && j.message) || ('rpc ' + r.status));
+  return j;
+}
+function errMsg(e){
+  const m = String(e && e.message || '');
+  for(const k in ERRS) if(m.indexOf(k) > -1) return ERRS[k];
+  return 'Não foi possível concluir. Tente novamente.';
+}
+
+async function boot(){
+  S.error = '';
+  try{
+    const [deps, cats, subs, prods, levels, sets, vars, attrs] = await Promise.all([
+      api('departments?select=id,name,slug,position&is_active=eq.true&order=position'),
+      api('categories?select=id,name,department_id,checkout_level,position&is_active=eq.true&order=position'),
+      api('subcategories?select=id,name,category_id,position&is_active=eq.true&order=position'),
+      api('products?select=id,name,description,warranty,delivery_estimate,price_mzn,availability,checkout_level,image_urls,subcategory_id,brand,origin_country,dimensions,weight_kg&is_published=eq.true&order=name'),
+      api('service_levels?select=level,name,description,human_intervention&is_active=eq.true&order=level'),
+      api('settings?select=key,value&is_public=eq.true'),
+      api('product_variants?select=id,product_id,label,options,price_mzn&is_active=eq.true').catch(() => []),
+      api('product_attributes?select=product_id,key,value').catch(() => [])
+    ]);
+    const set = {}; sets.forEach(x => set[x.key] = x.value);
+    S.data = {
+      deps, cats, subs, prods, levels, set, vars, attrs,
+      depBy: Object.fromEntries(deps.map(x => [x.id, x])),
+      catBy: Object.fromEntries(cats.map(x => [x.id, x])),
+      subBy: Object.fromEntries(subs.map(x => [x.id, x])),
+    };
+  }catch(e){
+    S.error = 'Não foi possível ligar à loja. Verifique a ligação e tente novamente.';
+  }
+  render();
+}
+
+// Nível de checkout: o maior entre o valor do produto e o nível do produto/categoria (igual ao servidor)
+function priceLevel(v){ return v < 3000 ? 1 : v < 15000 ? 2 : v < 60000 ? 3 : 4; }
+function lvlOf(p){
+  const d = S.data;
+  const sub = d.subBy[p.subcategory_id];
+  const cat = sub ? d.catBy[sub.category_id] : null;
+  const base = p.checkout_level ?? (cat ? cat.checkout_level : 1);
+  return Math.max(priceLevel(Number(p.price_mzn)), base);
+}
+function catPath(p){
+  const d = S.data;
+  const sub = d.subBy[p.subcategory_id];
+  const cat = sub ? d.catBy[sub.category_id] : null;
+  return cat && sub ? cat.name + ' › ' + sub.name : '';
+}
+function subsWithProducts(catId){
+  const d = S.data;
+  return d.subs.filter(s => s.category_id === catId && d.prods.some(p => p.subcategory_id === s.id));
+}
+/* ---------- Variantes (cor, tamanho, número, armazenamento) ---------- */
+function shuffle(a){ const b = a.slice(); for(let i = b.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; }
+function ckey(c){ return c.id + '|' + (c.v || ''); }
+function varsOf(pid){ return (S.data.vars || []).filter(v => v.product_id === pid); }
+function optGroups(pid){
+  const g = {};
+  varsOf(pid).forEach(v => Object.entries(v.options || {}).forEach(([k, val]) => { (g[k] = g[k] || new Set()).add(String(val)); }));
+  return Object.entries(g).map(([key, set]) => ({ key, values: [...set] }));
+}
+function hasOpts(pid){ return optGroups(pid).length > 0; }
+// Uma opção só fica ativa se existir uma variante com essa escolha e as restantes escolhidas
+function optAvail(pid, key, val, pick){
+  return varsOf(pid).some(v => {
+    const o = v.options || {};
+    return String(o[key]) === val && Object.entries(pick).every(([k, x]) => k === key || String(o[k]) === x);
+  });
+}
+function findVariant(pid, pick){
+  const keys = optGroups(pid).map(g => g.key);
+  if(!keys.length) return { ready: true, id: '', v: null };
+  if(!keys.every(k => pick[k])) return { ready: false, missing: false };
+  const v = varsOf(pid).find(x => keys.every(k => String((x.options || {})[k]) === pick[k]));
+  return v ? { ready: true, id: v.id, v } : { ready: false, missing: true };
+}
+function addToCart(id, v, q){
+  const k = id + '|' + (v || '');
+  const c = S.cart.find(x => ckey(x) === k);
+  if(c) c.q = Math.min(100, c.q + q); else S.cart.push({ id, v: v || '', q });
+  save('mt_cart', S.cart);
+}
+
+/* ---------- Sugestões "Para si" (pontuação simples) ---------- */
+// Mesma subcategoria +3, mesma categoria +2, mesmo departamento +1, e um pouco de aleatório
+function forYou(anchors, n){
+  const d = S.data, ids = new Set(anchors.map(p => p.id));
+  const catOf = p => { const s = d.subBy[p.subcategory_id]; return s ? d.catBy[s.category_id] : null; };
+  const subs = new Set(anchors.map(p => p.subcategory_id));
+  const cats = new Set(anchors.map(p => (catOf(p) || {}).id));
+  const deps = new Set(anchors.map(p => (catOf(p) || {}).department_id));
+  return d.prods.filter(p => !ids.has(p.id) && p.availability !== 'X')
+    .map(p => {
+      const c = catOf(p);
+      let sc = Math.random() * 0.9;
+      if(subs.has(p.subcategory_id)) sc += 3;
+      else if(c && cats.has(c.id)) sc += 2;
+      else if(c && deps.has(c.department_id)) sc += 1;
+      return { p, sc };
+    })
+    .sort((a, b) => b.sc - a.sc).slice(0, n).map(x => x.p);
+}
+function forYouHtml(anchors, n){
+  const list = forYou(anchors, n);
+  return list.length ? `<h2>Para si</h2><div class="grid">${list.map(cardHtml).join('')}</div>` : '';
+}
+
+/* ---------- Feed infinito da página inicial (ordem aleatória, sem repetir categoria seguida) ---------- */
+function feedOrder(){
+  if(S.feed) return S.feed;
+  const groups = {};
+  S.data.prods.filter(p => p.availability !== 'X').forEach(p => { (groups[p.subcategory_id] = groups[p.subcategory_id] || []).push(p); });
+  const gs = shuffle(Object.values(groups).map(shuffle));
+  const max = Math.max(0, ...gs.map(g => g.length));
+  const out = [];
+  for(let i = 0; i < max; i++) gs.forEach(g => { if(g[i]) out.push(g[i]); });
+  S.feed = out;
+  return out;
+}
+function setupFeed(){
+  const sent = $('#sentinel'), grid = $('#feed');
+  if(!sent || !grid || !('IntersectionObserver' in window)) return;
+  const total = feedOrder().length;
+  const more = () => {
+    if(S.feedN >= total){ sent.textContent = 'Já viu todos os produtos disponíveis.'; if(S.io) S.io.disconnect(); return; }
+    grid.insertAdjacentHTML('beforeend', feedOrder().slice(S.feedN, S.feedN + 8).map(cardHtml).join(''));
+    S.feedN += 8;
+  };
+  S.io = new IntersectionObserver(es => { if(es[0].isIntersecting) more(); }, { rootMargin: '300px' });
+  S.io.observe(sent);
+}
+
+/* ---------- Barra de finalização ---------- */
+function finishBar(){
+  const items = cartItems();
+  if(!items.length) return '';
+  const total = items.reduce((a, x) => a + x.price * x.c.q, 0);
+  const n = items.reduce((a, x) => a + x.c.q, 0);
+  return `<div class="box"><div class="tot">Carrinho: ${n} ${n === 1 ? 'item' : 'itens'} · ${money(total)}</div><button class="btn full" data-act="nav" data-id="cart">Finalizar pedido</button></div>`;
+}
+
+function cartItems(){
+  const d = S.data;
+  S.cart = S.cart.filter(c => d.prods.some(p => p.id === c.id) && (!c.v || (d.vars || []).some(v => v.id === c.v)));
+  return S.cart.map(c => {
+    const p = d.prods.find(x => x.id === c.id);
+    const v = c.v ? (d.vars || []).find(x => x.id === c.v) : null;
+    const price = v && v.price_mzn != null ? Number(v.price_mzn) : Number(p.price_mzn);
+    const label = v ? Object.entries(v.options || {}).map(([k, x]) => k + ': ' + x).join(' · ') : '';
+    return { c, p, v, price, label };
+  });
+}
+function cartLevel(){
+  const items = cartItems();
+  return items.length ? Math.max(...items.map(x => lvlOf({ ...x.p, price_mzn: x.price }))) : 1;
+}
+function payOpts(){
+  const list = ['M-Pesa','e-Mola','Transferência bancária'];
+  return list.map(o => `<option ${S.form.payment === o ? 'selected' : ''}>${esc(o)}</option>`).join('');
+}
+function crumbs(parts){
+  return '<div class="crumbs">' + parts.map(p => p.act
+    ? `<button class="chip" data-act="${p.act}" data-id="${esc(p.id || '')}">${esc(p.label)}</button>`
+    : `<b>${esc(p.label)}</b>`).join('<span>›</span>') + '</div>';
+}
+function availBadge(p){
+  return {MZ:['mz','Disponível em Moçambique'], SA:['sa','Por encomenda (África do Sul)'], X:['x','Indisponível']}[p.availability] || ['x','Indisponível'];
+}
+function cardHtml(p){
+  const d = S.data;
+  const img = Array.isArray(p.image_urls) && /^https:\/\//.test(p.image_urls[0] || '') ? p.image_urls[0] : '';
+  const av = availBadge(p);
+  const rate = Number(d.set.zar_rate) || 0;
+  const zar = rate ? ' · ≈ R ' + Math.round(p.price_mzn / rate).toLocaleString('pt-PT') : '';
+  const dis = p.availability === 'X' ? 'disabled' : '';
+  const btn = hasOpts(p.id)
+    ? `<button class="btn" data-act="product" data-id="${p.id}" ${dis}>Escolher</button>`
+    : `<button class="btn" data-act="add" data-id="${p.id}" ${dis}>${p.availability === 'SA' ? 'Encomendar' : 'Adicionar'}</button>`;
+  return `<div class="card">
+    <div class="ph" data-act="product" data-id="${p.id}" style="cursor:pointer">${img ? `<img src="${esc(img)}" alt="">` : '📦'}</div>
+    <div class="ct">
+      <small>${esc(catPath(p))}</small>
+      <b data-act="product" data-id="${p.id}" style="cursor:pointer">${esc(p.name)}</b>
+      <span class="av ${av[0]}">${av[1]}</span>
+      <div class="pr">${money(p.price_mzn)}<small>${zar}</small></div>
+      <small>Nível ${lvlOf(p)}${p.delivery_estimate ? ' · ' + esc(p.delivery_estimate) : ''}</small>
+      ${btn}
+    </div></div>`;
+}
+function deptTiles(){
+  return '<div class="grid">' + S.data.deps.map(x => `<button class="tile" data-act="dept" data-id="${x.id}">${esc(x.name)}</button>`).join('') + '</div>';
+}
+
+function homeHtml(){
+  const d = S.data;
+  return `<section class="hero">
+      <h1>Tecnologia e moda da África do Sul, entregues em Moçambique</h1>
+      <p class="muted">Escolha o departamento, envie o pedido pelo WhatsApp e acompanhe cada etapa com o seu código.</p>
+      <form id="search"><input name="q" placeholder="🔎 Pesquisar produtos" value="${esc(S.q)}"></form>
+      <button class="btn" data-act="nav" data-id="catalog">Ver catálogo</button>
+    </section>
+    <h2>Departamentos</h2>${deptTiles()}
+    <h2>Quatro níveis de serviço</h2>
+    ${d.levels.map(l => `<div class="lv"><b>Nível ${l.level} · ${esc(l.name)}</b><div class="note">${esc(l.description)}</div></div>`).join('')}
+    <h2>Descubra</h2>
+    <p class="muted">Produtos de todos os departamentos, em ordem variada. Continue a descer.</p>
+    <div class="grid" id="feed">${feedOrder().slice(0, S.feedN).map(cardHtml).join('')}</div>
+    <div id="sentinel" class="muted" style="text-align:center;padding:16px">A carregar mais…</div>`;
+}
+
+function catalogHtml(){
+  const d = S.data;
+  if(S.q){
+    const q = S.q.toLowerCase();
+    const res = d.prods.filter(p => (p.name + ' ' + (p.description || '')).toLowerCase().includes(q));
+    return crumbs([{label:'Catálogo', act:'root'}, {label:'Pesquisa: ' + S.q}])
+      + (res.length ? '<div class="grid">' + res.map(cardHtml).join('') + '</div>' : '<p class="muted">Nenhum produto encontrado.</p>')
+      + finishBar() + (res.length ? forYouHtml(res, 8) : '');
+  }
+  if(S.sub){
+    const sub = d.subBy[S.sub];
+    const cat = d.catBy[sub.category_id];
+    const dep = d.depBy[cat.department_id];
+    const list = d.prods.filter(p => p.subcategory_id === S.sub);
+    return crumbs([{label:'Catálogo', act:'root'}, {label:dep.name, act:'dept', id:dep.id}, {label:cat.name, act:'dept', id:dep.id}, {label:sub.name}])
+      + (list.length ? '<div class="grid">' + list.map(cardHtml).join('') + '</div>' : '<p class="muted">Sem produtos publicados nesta subcategoria.</p>')
+      + finishBar() + (list.length ? forYouHtml(list, 8) : '');
+  }
+  if(S.dept){
+    const dep = d.depBy[S.dept];
+    const cats = d.cats.filter(c => c.department_id === dep.id);
+    const blocks = cats.map(c => {
+      const subs = subsWithProducts(c.id);
+      if(!subs.length) return '';
+      return `<h2>${esc(c.name)}</h2><div class="chips">` + subs.map(s => {
+        const n = d.prods.filter(p => p.subcategory_id === s.id).length;
+        return `<button class="chip" data-act="sub" data-id="${s.id}">${esc(s.name)} (${n})</button>`;
+      }).join('') + '</div>';
+    }).join('');
+    return crumbs([{label:'Catálogo', act:'root'}, {label:dep.name}])
+      + (blocks || '<p class="muted">Ainda não há produtos publicados neste departamento.</p>');
+  }
+  return '<h2>Catálogo</h2>' + deptTiles();
+}
+
+function productHtml(){
+  const d = S.data, p = d.prods.find(x => x.id === S.pid);
+  if(!p){ S.view = 'catalog'; return catalogHtml(); }
+  const imgs = (Array.isArray(p.image_urls) ? p.image_urls : []).filter(u => /^https:\/\//.test(u));
+  const groups = optGroups(p.id);
+  const sel = findVariant(p.id, S.pick);
+  const price = sel.ready && sel.v && sel.v.price_mzn != null ? Number(sel.v.price_mzn) : Number(p.price_mzn);
+  const av = availBadge(p);
+  const sub = d.subBy[p.subcategory_id], cat = sub ? d.catBy[sub.category_id] : null;
+  const gal = imgs.length
+    ? `<div style="display:flex;gap:8px;overflow-x:auto">${imgs.map(u => `<img src="${esc(u)}" alt="" style="height:240px;border-radius:14px;flex:0 0 auto">`).join('')}</div>`
+    : `<div class="ph" style="font-size:72px;height:200px;display:flex;align-items:center;justify-content:center;border-radius:14px">📦</div>`;
+  const optHtml = groups.map(g => `<div style="margin-top:14px"><b>${esc(g.key)}</b><div class="chips" style="margin-top:6px">${g.values.map(val => {
+      const on = S.pick[g.key] === val, ok = optAvail(p.id, g.key, val, S.pick);
+      const st = (on ? 'border:2px solid var(--ok);font-weight:700;' : '') + (ok ? '' : 'opacity:.35;');
+      return `<button class="chip" data-act="pick" data-k="${esc(g.key)}" data-val="${esc(val)}" ${ok ? '' : 'disabled'} style="${st}">${esc(val)}</button>`;
+    }).join('')}</div></div>`).join('');
+  const selLabel = sel.ready && sel.v ? Object.entries(sel.v.options || {}).map(([k, x]) => k + ': ' + x).join(' · ') : '';
+  const note = !sel.ready && groups.length
+    ? `<p class="note">${sel.missing ? 'Esta combinação não está disponível. Escolha outra opção.' : 'Escolha as opções acima para continuar.'}</p>` : '';
+  const canAdd = sel.ready && p.availability !== 'X';
+  const info = [['Marca', p.brand], ['Origem', p.origin_country], ['Garantia', p.warranty], ['Dimensões', p.dimensions], ['Peso', p.weight_kg ? p.weight_kg + ' kg' : ''], ['Entrega', p.delivery_estimate]].filter(x => x[1]);
+  const specs = (d.attrs || []).filter(a => a.product_id === p.id).map(a => [a.key, a.value]);
+  const rows = info.concat(specs).map(([k, v]) => `<div class="tot" style="font-size:14px"><span>${esc(k)}</span><span>${esc(v)}</span></div>`).join('');
+  const crumbParts = [{label:'Catálogo', act:'root'}];
+  if(cat && sub) crumbParts.push({label:cat.name, act:'dept', id:cat.department_id}, {label:sub.name, act:'sub', id:sub.id});
+  crumbParts.push({label:p.name});
+  return crumbs(crumbParts)
+    + gal
+    + `<h2 style="margin-top:14px">${esc(p.name)}</h2>`
+    + `<span class="av ${av[0]}">${av[1]}</span>`
+    + (p.description ? `<p class="muted" style="margin:10px 0">${esc(p.description)}</p>` : '')
+    + optHtml
+    + `<div class="box"><div class="pr" style="font-size:20px">${money(price)}</div>`
+    + (selLabel ? `<div class="muted">Escolhido: ${esc(selLabel)}</div>` : '')
+    + `<div class="row" style="margin-top:10px"><span><button class="chip" data-act="pq" data-d="-1">−</button> <b>${S.pq}</b> <button class="chip" data-act="pq" data-d="1">+</button></span>`
+    + `<button class="btn" data-act="addp" data-id="${p.id}" ${canAdd ? '' : 'disabled'}>${p.availability === 'SA' ? 'Encomendar' : 'Adicionar ao carrinho'}</button></div>`
+    + note + `</div>`
+    + (rows ? `<h2>Detalhes</h2><div class="box">${rows}</div>` : '')
+    + finishBar()
+    + forYouHtml([p], 8);
+}
+
+const STEP_NAMES = ['Carrinho','Dados','Entrega e pagamento','Rever e enviar'];
+function stepBar(){
+  return `<div class="note">${STEP_NAMES.map((n, i) => `<b>${i + 1}. ${n}</b>`).join(' · ')}</div><div class="bar"><div style="width:${S.step / 4 * 100}%"></div></div>`;
+}
+function cartHtml(){
+  const items = cartItems();
+  if(!items.length) return '<h2>Carrinho</h2><p class="muted">O carrinho está vazio.</p>';
+  const L = cartLevel();
+  const total = items.reduce((a, x) => a + x.price * x.c.q, 0);
+  const F = S.form;
+  const quoteNote = L === 4 ? `<div class="msg">Este produto precisa de cotação. A equipa confirma o preço e a disponibilidade pelo WhatsApp.</div>` : '';
+  const head = `<h2>Encomenda</h2>${stepBar()}${quoteNote}`;
+
+  if(S.step === 1){
+    const rows = items.map(({c, p, price, label}) => `<div class="row"><span><b>${esc(p.name)}</b>${label ? `<br><small>${esc(label)}</small>` : ''}<br><small>${money(price)}</small></span><span><button class="chip" data-act="qty" data-k="${esc(ckey(c))}" data-d="-1">−</button> ${c.q} <button class="chip" data-act="qty" data-k="${esc(ckey(c))}" data-d="1">+</button> <button class="chip" data-act="rm" data-k="${esc(ckey(c))}" aria-label="Remover">✕</button></span></div>`).join('');
+    return head + `<h2>1. Carrinho</h2>${rows}<div class="tot">Subtotal: ${money(total)}</div><p class="note">A entrega é indicada no passo 3. O pagamento só é confirmado depois da nossa verificação.</p><br><button class="btn" data-act="step" data-id="2">Continuar</button>`;
+  }
+
+  if(S.step === 2){
+    return head + `<h2>2. Os seus dados</h2>
+    <form id="ck-dados">
+      <label>Nome completo *</label><input name="cust_name" value="${esc(F.cust_name || '')}" autocomplete="name" required>
+      <label>Telemóvel (WhatsApp) *</label><input name="cust_phone" type="tel" value="${esc(F.cust_phone || '')}" placeholder="84 123 4567" autocomplete="tel" required>
+      <div id="ck-msg"></div>
+      <br><button class="btn">Continuar</button>
+      <button type="button" class="chip" data-act="step" data-id="1">Voltar</button>
+    </form>`;
+  }
+
+  if(S.step === 3){
+    const dv = F.delivery || 'Entrega em Maputo';
+    const dvOpts = ['Entrega em Maputo','Entrega noutra província','Levantamento'];
+    return head + `<h2>3. Entrega e pagamento</h2>
+    <form id="ck-entrega">
+      <label>Como quer receber</label>
+      <select name="delivery">${dvOpts.map(o => `<option ${dv === o ? 'selected' : ''}>${o}</option>`).join('')}</select>
+      <label>Bairro (para entrega) *</label><input name="bairro" value="${esc(F.bairro || '')}">
+      <label>Zona (para entrega) *</label><input name="zona" value="${esc(F.zona || '')}">
+      <label>Ponto de referência (para entrega) *</label><input name="ref" value="${esc(F.ref || '')}" placeholder="Ex.: portão azul, junto à farmácia">
+      <label>Como vai pagar *</label><select name="payment">${payOpts()}</select>
+      <p class="note">A taxa de entrega é calculada pela equipa no WhatsApp, de acordo com o bairro. M-Pesa e e-Mola: a equipa envia o número depois de confirmar o pedido. Nunca partilhe o seu PIN.</p>
+      <div id="ck-msg"></div>
+      <br><button class="btn">Rever pedido</button>
+      <button type="button" class="chip" data-act="step" data-id="2">Voltar</button>
+    </form>`;
+  }
+
+  const lev = F.delivery === 'Levantamento';
+  const lines = items.map(({c, p, price, label}) => `${c.q}× ${esc(p.name)}${label ? ' (' + esc(label) + ')' : ''} — ${money(price * c.q)}`).join('<br>');
+  return head + `<h2>4. Rever e enviar</h2>
+    <div class="msg"><b>${esc(F.cust_name || '')}</b> · ${esc(F.cust_phone || '')}<br>${lines}<br><b>Subtotal: ${money(total)}</b></div>
+    <div class="msg">${esc(F.delivery || '')}${lev ? '' : `<br>${esc(F.bairro || '')}, ${esc(F.zona || '')}<br>Ref.: ${esc(F.ref || '')}`}<br>Taxa de entrega: a calcular pela equipa no WhatsApp<br>Pagamento: ${esc(F.payment || '')}</div>
+    <p class="note">Ao enviar, recebe um código de pedido. Confirme o pagamento pelo WhatsApp com esse código. O pagamento só é confirmado após verificação. A equipa acompanha a compra e a entrega até o produto chegar às suas mãos.</p>
+    <form id="checkout"><button class="btn" ${S.busy ? 'disabled' : ''}>${S.busy ? 'A enviar…' : 'Enviar pedido'}</button>
+    <button type="button" class="chip" data-act="step" data-id="3">Voltar</button>
+    <div id="ck-msg"></div></form>`;
+}
+
+function ordersHtml(){
+  const wa = (S.data && S.data.set.whatsapp_number || '').replace(/\D/g, '');
+  const last = S.last ? `<div class="msg">Último pedido: <b>${esc(S.last.code)}</b> · ${esc(ST[S.last.status] || S.last.status)} · ${money(S.last.total)}
+      <br><small>Guarde este código para acompanhar o pedido.</small>
+      ${wa ? `<br><a style="color:var(--ok)" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(S.last.wa || ('Olá, o meu pedido é ' + S.last.code))}">Confirmar pedido no WhatsApp (com taxa de entrega)</a>` : ''}
+    </div>` : '';
+  return `<h2>Acompanhar pedido</h2>
+    <form id="track"><input name="code" placeholder="Código do pedido (ex.: MT-AB12CD)" value="${esc(S.track)}" autocomplete="off"><button class="btn">Consultar</button></form>
+    ${last}<div id="track-out"></div>`;
+}
+
+function trackHtml(r){
+  const idx = ORDER.indexOf(r.status);
+  const pct = r.status === 'cancelled' || idx < 0 ? 0 : Math.round(idx / (ORDER.length - 1) * 100);
+  const events = (r.events || []).map(e => `<div class="row"><span>${esc(ST[e.status] || e.status)}${e.note ? '<br><small>' + esc(e.note) + '</small>' : ''}</span><small>${new Date(e.at).toLocaleString('pt-PT')}</small></div>`).join('');
+  const canPay = ['received','awaiting_confirmation','payment_pending'].includes(r.status);
+  return `<div class="msg"><b>${esc(r.code)}</b> · ${esc(ST[r.status] || r.status)}<div class="bar"><div style="width:${pct}%"></div></div></div>
+    ${events}
+    ${canPay ? `<h2>Já pagou?</h2><p class="note">Envie a referência da transação. A equipa verifica o pagamento antes de avançar. Enviar a referência não confirma o pagamento.</p>
+    <form id="paysub"><input type="hidden" name="code" value="${esc(r.code)}">
+      <label>Método</label><select name="method"><option>M-Pesa</option><option>e-Mola</option><option>Transferência bancária</option></select>
+      <label>Referência da transação</label><input name="reference" required maxlength="120">
+      <button class="btn">Enviar referência</button><div id="pay-msg"></div></form>` : ''}`;
+}
+
+function render(){
+  if(S.io){ S.io.disconnect(); S.io = null; }
+  const app = $('#app');
+  if(!S.data){
+    app.innerHTML = S.error
+      ? `<div class="msg">${esc(S.error)}</div><button class="btn" data-act="retry">Tentar novamente</button>`
+      : '<p class="muted">A carregar…</p>';
+    dock(); return;
+  }
+  const view = {home: homeHtml, catalog: catalogHtml, product: productHtml, cart: cartHtml, orders: ordersHtml}[S.view];
+  app.innerHTML = view();
+  const wnum = (S.data.set.whatsapp_number || '').replace(/\D/g, '');
+  $('#wabar').innerHTML = wnum ? `<a class="wabar" target="_blank" rel="noopener" href="https://wa.me/${wnum}">💬 Fale connosco no WhatsApp: +${wnum}</a>` : '';
+  dock();
+  if(S.view === 'home') setupFeed();
+}
+function dock(){
+  const n = S.cart.reduce((a, c) => a + c.q, 0);
+  $('#dock').innerHTML = [['home','🏠','Início'],['catalog','🛍️','Catálogo'],['cart','🛒','Carrinho'],['orders','📦','Pedidos']]
+    .map(([v, i, l]) => `<button class="${S.view === v || (v === 'catalog' && S.view === 'product') ? 'on' : ''}" data-act="nav" data-id="${v}"><i>${i}</i>${l}${v === 'cart' && n ? `<span class="badge">${n}</span>` : ''}</button>`).join('');
+}
+function toast(t){
+  const el = $('#toast'); el.textContent = t; el.classList.add('on');
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 1600);
+}
+
+function orderWaText(code){
+  const F = S.form, items = cartItems();
+  const sub = items.reduce((a, x) => a + x.price * x.c.q, 0);
+  const lines = items.map(({c, p, price, label}) => `${c.q}x ${p.name}${label ? ' (' + label + ')' : ''} — ${money(price * c.q)}`).join('\n');
+  const lev = F.delivery === 'Levantamento';
+  return `NOVO PEDIDO — MULT TRADE\nCódigo: ${code}\n\nCLIENTE: ${F.cust_name || ''}\nTELEFONE: ${F.cust_phone || ''}\n\nPEDIDO:\n${lines}\n\nSUBTOTAL: ${money(sub)}\nTAXA DE ENTREGA: a calcular pela equipa\n\nMÉTODO: ${F.delivery || ''}\n${lev ? '' : `ENDEREÇO: ${F.bairro || ''}, ${F.zona || ''} (ref: ${F.ref || ''})\n`}PAGAMENTO: ${F.payment || ''}\n\nStatus: aguardando confirmação.`;
+}
+
+async function placeOrder(){
+  const items = cartItems().map(({c}) => ({ product_id: c.id, quantity: c.q, variant_id: c.v || null }));
+  if(!items.length) return;
+  const L = cartLevel();
+  const F = S.form;
+  const delivery = F.delivery === 'Levantamento'
+    ? 'Levantamento'
+    : `${F.delivery || ''}: ${F.bairro || ''}, ${F.zona || ''} (ref: ${F.ref || ''})`;
+  S.busy = true; render();
+  try{
+    const r = await rpc('place_order', {
+      p_name: (F.cust_name || '').trim(), p_phone: (F.cust_phone || '').trim(),
+      p_delivery: delivery, p_payment: F.payment || '',
+      p_quote_mode: L === 4 ? 'automatica' : null, p_items: items
+    });
+    S.last = { code: r.code, status: r.status, total: r.total_mzn, wa: orderWaText(r.code) };
+    save('mt_last', S.last);
+    S.cart = []; save('mt_cart', S.cart);
+    S.form = { cust_name: F.cust_name, cust_phone: F.cust_phone };
+    S.track = r.code; S.view = 'orders'; S.busy = false; S.step = 1;
+    window.scrollTo(0, 0); toast('Pedido criado'); render();
+  }catch(err){
+    S.busy = false; render();
+    const m = $('#ck-msg'); if(m) m.innerHTML = `<div class="msg">${esc(errMsg(err))}</div>`;
+  }
+}
+async function trackOrder(code){
+  const out = $('#track-out');
+  if(!code){ out.innerHTML = '<div class="msg">Escreva o código do pedido.</div>'; return; }
+  out.innerHTML = '<p class="muted">A consultar…</p>';
+  try{
+    const r = await rpc('track_order', { p_code: code.toUpperCase() });
+    out.innerHTML = r ? trackHtml(r) : '<div class="msg">Não encontrámos nenhum pedido com esse código.</div>';
+  }catch(e){
+    out.innerHTML = '<div class="msg">Não foi possível consultar agora. Tente novamente.</div>';
+  }
+}
+async function submitPay(f){
+  const m = $('#pay-msg');
+  try{
+    const ok = await rpc('submit_payment', { p_code: fv(f,'code'), p_method: fv(f,'method'), p_reference: fv(f,'reference').trim() });
+    m.innerHTML = `<div class="msg">${ok ? 'Referência registada. A equipa vai verificar o pagamento.' : 'Não foi possível registar. Confirme o código e o estado do pedido.'}</div>`;
+  }catch(e){
+    m.innerHTML = '<div class="msg">Não foi possível registar agora. Tente novamente.</div>';
+  }
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]');
+  if(!t || t.disabled) return;
+  const a = t.dataset.act, id = t.dataset.id;
+  switch(a){
+    case 'nav': S.view = id; if(id === 'catalog'){ S.dept = null; S.sub = null; S.q = ''; } window.scrollTo(0, 0); break;
+    case 'root': S.view = 'catalog'; S.dept = null; S.sub = null; S.q = ''; break;
+    case 'dept': S.view = 'catalog'; S.dept = id; S.sub = null; S.q = ''; window.scrollTo(0, 0); break;
+    case 'sub': S.view = 'catalog'; S.sub = id; S.q = ''; window.scrollTo(0, 0); break;
+    case 'product': S.view = 'product'; S.pid = id; S.pick = {}; S.pq = 1; window.scrollTo(0, 0); break;
+    case 'pick': { const k = t.dataset.k, val = t.dataset.val; if(S.pick[k] === val) delete S.pick[k]; else S.pick[k] = val; break; }
+    case 'pq': S.pq = Math.min(100, Math.max(1, S.pq + Number(t.dataset.d))); break;
+    case 'addp': {
+      const r = findVariant(id, S.pick);
+      if(!r.ready){ toast(r.missing ? 'Combinação indisponível' : 'Escolha as opções primeiro'); return; }
+      addToCart(id, r.id, S.pq); S.pq = 1; toast('Adicionado ao carrinho'); break;
+    }
+    case 'add': {
+      if(hasOpts(id)){ S.view = 'product'; S.pid = id; S.pick = {}; S.pq = 1; window.scrollTo(0, 0); break; }
+      addToCart(id, '', 1); toast('Adicionado ao carrinho'); break;
+    }
+    case 'qty': { const c = S.cart.find(x => ckey(x) === t.dataset.k); if(c) c.q = Math.min(100, Math.max(1, c.q + Number(t.dataset.d))); save('mt_cart', S.cart); break; }
+    case 'rm': S.cart = S.cart.filter(x => ckey(x) !== t.dataset.k); save('mt_cart', S.cart); break;
+    case 'step': S.step = Number(id); break;
+    case 'retry': boot(); return;
+  }
+  render();
+});
+
+document.addEventListener('input', e => {
+  const f = e.target.form;
+  if(f && ['ck-dados','ck-entrega'].includes(f.id)) S.form[e.target.name] = e.target.value;
+  if(f && f.id === 'track') S.track = e.target.value;
+});
+document.addEventListener('change', e => {
+  if(e.target.name === 'quote') S.quote = e.target.value;
+  const f = e.target.form;
+  if(f && ['ck-dados','ck-entrega'].includes(f.id)) S.form[e.target.name] = e.target.value;
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target;
+  if(f.id === 'search'){ S.q = fv(f, 'q').trim(); S.view = 'catalog'; S.dept = null; S.sub = null; render(); }
+  else if(f.id === 'ck-dados'){
+    const n = fv(f,'cust_name').trim(), t = fv(f,'cust_phone').trim(), m = $('#ck-msg');
+    if(n.length < 3) m.innerHTML = '<div class="msg">Indique o seu nome completo.</div>';
+    else if(!/^(\+?258)?\s?8[2-7]\s?\d{3}\s?\d{4}$/.test(t)) m.innerHTML = '<div class="msg">Telemóvel inválido. Ex.: 84 123 4567 (Moçambique).</div>';
+    else { Object.assign(S.form, {cust_name: n, cust_phone: t}); S.step = 3; render(); }
+  }
+  else if(f.id === 'ck-entrega'){
+    const dv = fv(f,'delivery'), lev = dv === 'Levantamento', m = $('#ck-msg');
+    const b = fv(f,'bairro').trim(), z = fv(f,'zona').trim(), r = fv(f,'ref').trim();
+    if(!lev && (!b || !z || !r)) m.innerHTML = '<div class="msg">Para entrega, indique bairro, zona e ponto de referência.</div>';
+    else { Object.assign(S.form, {delivery: dv, bairro: b, zona: z, ref: r, payment: fv(f,'payment')}); S.step = 4; render(); }
+  }
+  else if(f.id === 'checkout') placeOrder();
+  else if(f.id === 'track'){ S.track = fv(f, 'code').trim(); trackOrder(S.track); }
+  else if(f.id === 'paysub') submitPay(f);
+});
+
+dock();
+boot();
+</script>
+</body>
+</html>
